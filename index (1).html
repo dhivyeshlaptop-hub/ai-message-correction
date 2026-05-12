@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WriteAI — Grammar & Content Rewriter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --ink-soft: #3a3834;
+    --ink-muted: #7a7870;
+    --cream: #faf8f3;
+    --cream-dark: #f0ede5;
+    --cream-border: #e2ddd4;
+    --gold: #c4922a;
+    --gold-light: #f5e9d0;
+    --gold-dark: #8a6318;
+    --teal: #1a6b5a;
+    --teal-light: #d4ede8;
+    --teal-dark: #0d4038;
+    --rose: #b5394a;
+    --rose-light: #f5dde0;
+    --blue: #2b5ba8;
+    --blue-light: #dce7f8;
+    --surface: #ffffff;
+    --shadow: rgba(15,14,12,0.08);
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.03em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: inline-block;
+  }
+
+  .header-tag {
+    font-size: 12px;
+    font-weight: 300;
+    color: #aaa;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hero {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 3rem 2rem 4rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 120%, #c4922a22 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    letter-spacing: -0.04em;
+    line-height: 1.08;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .hero h1 span { color: var(--gold); }
+
+  .hero p {
+    font-size: 1rem;
+    font-weight: 300;
+    color: #bbb;
+    max-width: 520px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .mode-pills {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .mode-pill {
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    transition: all 0.18s ease;
+    background: rgba(255,255,255,0.07);
+    color: #ccc;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .mode-pill:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+  .mode-pill.active {
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+
+  .workspace {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .workspace { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2rem; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--cream-border);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--cream-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--cream-dark);
+  }
+
+  .panel-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-label .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  .char-count { font-size: 12px; color: var(--ink-muted); }
+
+  textarea {
+    width: 100%;
+    min-height: 280px;
+    padding: 1.25rem;
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--ink);
+    background: var(--surface);
+    caret-color: var(--gold);
+  }
+
+  textarea::placeholder { color: var(--ink-muted); font-weight: 300; }
+
+  .panel-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--cream-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--cream-dark);
+  }
+
+  .btn-primary {
+    padding: 10px 22px;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .btn-primary:hover { background: var(--gold); color: var(--ink); }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    padding: 10px 18px;
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--cream-border);
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-secondary:hover { background: var(--cream-border); }
+
+  .output-area {
+    min-height: 280px;
+    padding: 1.25rem;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--ink);
+  }
+
+  .output-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+    gap: 12px;
+    color: var(--ink-muted);
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .output-placeholder .icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--cream-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .output-placeholder p { font-size: 14px; font-weight: 300; max-width: 200px; }
+
+  .loader {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+    gap: 16px;
+    padding: 2rem;
+  }
+
+  .loader.visible { display: flex; }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2.5px solid var(--cream-border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader-text {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-weight: 300;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
+
+  .issues-list {
+    padding: 0 1.25rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .issue-card {
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14px;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .issue-card.error   { border-color: #f0c0c3; background: #fff5f6; }
+  .issue-card.warning { border-color: #f0ddb0; background: #fffbf0; }
+  .issue-card.info    { border-color: #b8d4f5; background: #f0f6ff; }
+  .issue-card.success { border-color: #b2dfd2; background: #f0faf7; }
+
+  .issue-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  .issue-type {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+
+  .issue-card.error   .issue-type { color: var(--rose); }
+  .issue-card.warning .issue-type { color: #8a6318; }
+  .issue-card.info    .issue-type { color: var(--blue); }
+  .issue-card.success .issue-type { color: var(--teal); }
+
+  .issue-desc { color: var(--ink-soft); line-height: 1.5; }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 900px) { .stats-bar { grid-template-columns: repeat(2,1fr); } }
+
+  .stat-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--cream-border);
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label { font-size: 12px; color: var(--ink-muted); font-weight: 300; }
+
+  .workspace-full {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .score-badge.high { background: var(--teal-light); color: var(--teal-dark); }
+  .score-badge.mid  { background: var(--gold-light); color: var(--gold-dark); }
+  .score-badge.low  { background: var(--rose-light); color: var(--rose); }
+
+  .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    background: transparent;
+    border: 1px solid var(--cream-border);
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .copy-btn:hover  { background: var(--cream-dark); }
+  .copy-btn.copied { background: var(--teal-light); color: var(--teal-dark); border-color: transparent; }
+
+  .tone-selector { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .tone-chip {
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--cream-border);
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .tone-chip:hover { background: var(--cream-dark); }
+  .tone-chip.active { background: var(--ink); color: var(--cream); border-color: var(--ink); font-weight: 500; }
+
+  .error-msg {
+    padding: 1rem 1.25rem;
+    background: #fff5f6;
+    color: var(--rose);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid #f0c0c3;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+
+  .divider { height: 1px; background: var(--cream-border); margin: 0 1.25rem; }
+
+  .improvements-block {
+    margin-top: 1rem;
+  }
+
+  .improvements-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 6px;
+  }
+
+  .improvements-item {
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 3px 0;
+  }
+
+  .summary-box {
+    margin-top: 1rem;
+    padding: 12px 14px;
+    background: var(--cream-dark);
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: var(--ink-muted);
+    border-left: 3px solid var(--gold);
+  }
+
+  .corrected-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    WriteAI
+  </div>
+  <span class="header-tag">Grammar · Spelling · Rewriter</span>
+</header>
+
+<section class="hero">
+  <h1>Write with <span>clarity</span><br>and confidence</h1>
+  <p>AI-powered grammar correction, spelling checks, and intelligent content rewriting in seconds.</p>
+  <div class="mode-pills">
+    <button class="mode-pill active" data-mode="grammar">Grammar &amp; Spelling</button>
+    <button class="mode-pill" data-mode="rewrite">Content Rewriter</button>
+    <button class="mode-pill" data-mode="analyze">Full Analysis</button>
+  </div>
+</section>
+
+<!-- Stats bar -->
+<div class="workspace-full" id="stats-section" style="display:none; padding-top:1.5rem;">
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-value" id="stat-words">0</div><div class="stat-label">Words</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-errors">0</div><div class="stat-label">Issues found</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-score">—</div><div class="stat-label">Readability</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-grade">—</div><div class="stat-label">Grade level</div></div>
+  </div>
+</div>
+
+<main class="workspace">
+
+  <!-- INPUT PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-label"><span class="dot"></span>Your text</span>
+      <span class="char-count" id="char-count">0 characters</span>
+    </div>
+    <textarea id="input-text" placeholder="Paste or type your text here…&#10;&#10;Example: &quot;He dont know nothing about grammer. Their going to the store tommorow.&quot;"></textarea>
+
+    <div id="tone-section" style="padding:0.75rem 1.25rem; border-top:1px solid var(--cream-border); display:none;">
+      <div style="font-size:12px; color:var(--ink-muted); margin-bottom:8px; font-weight:500;">Rewrite tone</div>
+      <div class="tone-selector">
+        <button class="tone-chip active" data-tone="professional">Professional</button>
+        <button class="tone-chip" data-tone="casual">Casual</button>
+        <button class="tone-chip" data-tone="academic">Academic</button>
+        <button class="tone-chip" data-tone="creative">Creative</button>
+        <button class="tone-chip" data-tone="concise">Concise</button>
+        <button class="tone-chip" data-tone="formal">Formal</button>
+      </div>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn-primary" id="analyze-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Analyze Text
+      </button>
+      <button class="btn-secondary" id="clear-btn">Clear</button>
+      <button class="btn-secondary" id="sample-btn">Try sample</button>
+    </div>
+  </div>
+
+  <!-- OUTPUT PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-label"><span class="dot"></span>Result</span>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span id="score-badge-area"></span>
+        <button class="copy-btn" id="copy-btn" style="display:none;" aria-label="Copy result text">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <div id="output-loader" class="loader" role="status" aria-live="polite">
+      <div class="spinner"></div>
+      <span class="loader-text" id="loader-text">Analyzing your text…</span>
+    </div>
+
+    <div id="output-placeholder" class="output-placeholder" aria-hidden="true">
+      <div class="icon">✦</div>
+      <p>Your corrected text will appear here</p>
+    </div>
+
+    <div id="output-area" class="output-area" style="display:none;" aria-live="polite"></div>
+    <div id="error-area" style="display:none;" class="error-msg" role="alert">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="error-text"></span>
+    </div>
+
+    <div id="output-footer" class="panel-footer" style="display:none;">
+      <button class="btn-primary" id="apply-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        Apply Changes
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- Issues section -->
+<div class="workspace-full" id="issues-section" style="display:none;">
+  <div class="panel">
+    <div class="section-title" id="issues-title">Issues Found</div>
+    <div class="divider"></div>
+    <div class="issues-list" id="issues-list"></div>
+  </div>
+</div>
+
+<script>
+  const SAMPLES = [
+    "Their are alot of people whom doesnt understand the importants of good grammer. Me and my freind went to the store yesterday and buyed alot of things. Its importent to right correctly if you wants to be taking seriously in profesional setting.",
+    "The weather today are very nice. Yesterday I goes to the park with my sister. We have alot of fun and we seen many beautifull birds. There nests was high up in the trees. I think nature are the most wonderfull thing.",
+    "I am writing this email to you regarding the job opening that I have saw on your websit. I am very intrested in this possition and beleive that I would be a perfact candidat. I have alot of experience in this feild."
+  ];
+
+  let currentMode = 'grammar';
+  let currentTone = 'professional';
+  let currentResult = '';
+
+  const inputText      = document.getElementById('input-text');
+  const charCount      = document.getElementById('char-count');
+  const analyzeBtn     = document.getElementById('analyze-btn');
+  const clearBtn       = document.getElementById('clear-btn');
+  const sampleBtn      = document.getElementById('sample-btn');
+  const outputLoader   = document.getElementById('output-loader');
+  const outputPlaceholder = document.getElementById('output-placeholder');
+  const outputArea     = document.getElementById('output-area');
+  const errorArea      = document.getElementById('error-area');
+  const outputFooter   = document.getElementById('output-footer');
+  const copyBtn        = document.getElementById('copy-btn');
+  const applyBtn       = document.getElementById('apply-btn');
+  const loaderText     = document.getElementById('loader-text');
+  const issuesSection  = document.getElementById('issues-section');
+  const issuesList     = document.getElementById('issues-list');
+  const statsSection   = document.getElementById('stats-section');
+  const scoreBadgeArea = document.getElementById('score-badge-area');
+
+  // ── Mode switching ──────────────────────────────────────────
+  document.querySelectorAll('.mode-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentMode = pill.dataset.mode;
+      document.getElementById('tone-section').style.display = currentMode === 'rewrite' ? 'block' : 'none';
+      const labels = { grammar: 'Analyze Text', rewrite: 'Rewrite Text', analyze: 'Full Analysis' };
+      analyzeBtn.querySelector('svg').nextSibling.textContent = ' ' + labels[currentMode];
+      resetOutput();
+    });
+  });
+
+  // ── Tone chips ──────────────────────────────────────────────
+  document.querySelectorAll('.tone-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.tone-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentTone = chip.dataset.tone;
+    });
+  });
+
+  // ── Character count ─────────────────────────────────────────
+  inputText.addEventListener('input', () => {
+    const len = inputText.value.length;
+    charCount.textContent = len + ' character' + (len !== 1 ? 's' : '');
+  });
+
+  clearBtn.addEventListener('click', () => {
+    inputText.value = '';
+    charCount.textContent = '0 characters';
+    resetOutput();
+  });
+
+  sampleBtn.addEventListener('click', () => {
+    const s = SAMPLES[Math.floor(Math.random() * SAMPLES.length)];
+    inputText.value = s;
+    charCount.textContent = s.length + ' characters';
+    resetOutput();
+  });
+
+  // ── Copy ────────────────────────────────────────────────────
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(outputArea.innerText).then(() => {
+      copyBtn.classList.add('copied');
+      copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg> Copy`;
+      }, 2000);
+    });
+  });
+
+  // ── Apply ───────────────────────────────────────────────────
+  applyBtn.addEventListener('click', () => {
+    if (currentResult) {
+      inputText.value = currentResult;
+      charCount.textContent = currentResult.length + ' characters';
+      resetOutput();
+    }
+  });
+
+  function resetOutput() {
+    outputLoader.classList.remove('visible');
+    outputPlaceholder.style.display = 'flex';
+    outputArea.style.display = 'none';
+    errorArea.style.display = 'none';
+    outputFooter.style.display = 'none';
+    copyBtn.style.display = 'none';
+    issuesSection.style.display = 'none';
+    statsSection.style.display = 'none';
+    issuesList.innerHTML = '';
+    scoreBadgeArea.innerHTML = '';
+    currentResult = '';
+  }
+
+  function showError(msg) {
+    outputLoader.classList.remove('visible');
+    outputPlaceholder.style.display = 'none';
+    outputArea.style.display = 'none';
+    errorArea.style.display = 'flex';
+    document.getElementById('error-text').textContent = msg;
+    analyzeBtn.disabled = false;
+  }
+
+  function escapeHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function updateStats(words, issues, score, grade) {
+    document.getElementById('stat-words').textContent  = words;
+    document.getElementById('stat-errors').textContent = issues;
+    document.getElementById('stat-score').textContent  = score || '—';
+    document.getElementById('stat-grade').textContent  = grade || '—';
+    statsSection.style.display = 'block';
+  }
+
+  function renderScoreBadge(score) {
+    if (!score && score !== 0) return;
+    const n = parseInt(score);
+    const cls   = n >= 70 ? 'high' : n >= 50 ? 'mid' : 'low';
+    const label = n >= 70 ? 'Good'  : n >= 50 ? 'Fair' : 'Needs work';
+    scoreBadgeArea.innerHTML = `<span class="score-badge ${cls}">${label} · ${n}/100</span>`;
+  }
+
+  function renderIssues(issues) {
+    if (!issues || issues.length === 0) {
+      issuesList.innerHTML = `<div class="issue-card success"><span class="issue-icon">✅</span><div><div class="issue-type">All clear</div><div class="issue-desc">No issues found — your text looks great!</div></div></div>`;
+      issuesSection.style.display = 'block';
+      return;
+    }
+    issuesList.innerHTML = '';
+    const icons = { error: '🔴', warning: '🟡', info: '🔵', success: '✅' };
+    issues.forEach((issue, i) => {
+      const card = document.createElement('div');
+      card.className = `issue-card ${issue.severity || 'info'}`;
+      card.style.animationDelay = (i * 0.06) + 's';
+      card.innerHTML = `
+        <span class="issue-icon" aria-hidden="true">${icons[issue.severity] || '🔵'}</span>
+        <div>
+          <div class="issue-type">${escapeHtml(issue.type || 'Issue')}</div>
+          <div class="issue-desc">${escapeHtml(issue.description)}</div>
+          ${issue.suggestion ? `<div style="margin-top:4px;font-size:13px;color:var(--teal-dark);font-weight:500;">→ ${escapeHtml(issue.suggestion)}</div>` : ''}
+        </div>`;
+      issuesList.appendChild(card);
+    });
+    issuesSection.style.display = 'block';
+  }
+
+  // ── Main analyze ────────────────────────────────────────────
+  analyzeBtn.addEventListener('click', async () => {
+    const text = inputText.value.trim();
+    if (!text)        { showError('Please enter some text first.'); return; }
+    if (text.length < 5) { showError('Text is too short — please enter at least a sentence.'); return; }
+
+    // Reset UI
+    outputPlaceholder.style.display  = 'none';
+    outputArea.style.display         = 'none';
+    errorArea.style.display          = 'none';
+    outputFooter.style.display       = 'none';
+    copyBtn.style.display            = 'none';
+    issuesSection.style.display      = 'none';
+    statsSection.style.display       = 'none';
+    issuesList.innerHTML             = '';
+    scoreBadgeArea.innerHTML         = '';
+    outputLoader.classList.add('visible');
+    analyzeBtn.disabled              = true;
+
+    const loaderCycles = {
+      grammar: ['Scanning for grammar issues…','Checking spelling…','Almost done…'],
+      rewrite: ['Reading your text…','Rewriting with AI…','Polishing…'],
+      analyze: ['Analyzing structure…','Checking readability…','Computing score…']
+    };
+    const msgs = loaderCycles[currentMode];
+    let mi = 0;
+    loaderText.textContent = msgs[0];
+    const msgTimer = setInterval(() => { mi = (mi + 1) % msgs.length; loaderText.textContent = msgs[mi]; }, 1800);
+
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+    // Build prompts
+    let systemPrompt, userPrompt;
+
+    if (currentMode === 'grammar') {
+      systemPrompt = `You are an expert English grammar and spelling checker. Analyze the given text and return ONLY a valid JSON object with this exact structure (no markdown, no extra text):
+{
+  "corrected_text": "the fully corrected text",
+  "issues": [
+    { "severity": "error", "type": "Grammar", "description": "explanation", "suggestion": "corrected version" }
+  ],
+  "score": 75,
+  "grade_level": "Grade 8",
+  "summary": "Brief 1-sentence summary"
+}
+severity values: error (grammar/spelling mistakes), warning (style issues), info (suggestions).`;
+      userPrompt = `Check this text:\n\n${text}`;
+
+    } else if (currentMode === 'rewrite') {
+      systemPrompt = `You are an expert AI content rewriter. Rewrite the given text in a ${currentTone} tone while preserving its original meaning. Improve grammar, vocabulary, readability, and sentence structure. Return ONLY a valid JSON object (no markdown, no extra text):
+{
+  "corrected_text": "original text with basic grammar fixes only",
+  "rewritten_text": "fully rewritten version in ${currentTone} tone",
+  "improvements": ["improvement 1", "improvement 2"],
+  "score": 82,
+  "grade_level": "Grade 9"
+}`;
+      userPrompt = `Rewrite this text:\n\n${text}`;
+
+    } else {
+      systemPrompt = `You are a comprehensive English writing analyst. Analyze the text for grammar, spelling, readability, style, and clarity. Return ONLY a valid JSON object (no markdown, no extra text):
+{
+  "corrected_text": "fully corrected version",
+  "issues": [
+    { "severity": "error", "type": "Grammar", "description": "specific issue", "suggestion": "how to fix it" }
+  ],
+  "score": 68,
+  "grade_level": "Grade 10",
+  "summary": "2-3 sentence comprehensive assessment",
+  "strengths": ["strength 1"],
+  "improvements": ["improvement 1", "improvement 2"]
+}`;
+      userPrompt = `Fully analyze this text:\n\n${text}`;
+    }
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
+          max_tokens: 1000
+        })
+      });
+
+      clearInterval(msgTimer);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Server error. Please try again.');
+      }
+
+      const rawText = (data.content || []).find(b => b.type === 'text')?.text || '';
+      let parsed;
+      try {
+        const clean = rawText.replace(/```json|```/g, '').trim();
+        parsed = JSON.parse(clean);
+      } catch {
+        throw new Error('Could not parse AI response. Please try again.');
+      }
+
+      outputLoader.classList.remove('visible');
+
+      const displayText = currentMode === 'rewrite'
+        ? (parsed.rewritten_text || parsed.corrected_text)
+        : parsed.corrected_text;
+
+      currentResult = parsed.corrected_text || displayText || '';
+
+      // Build output HTML safely
+      let html = '';
+      if (displayText) {
+        html += `<p class="corrected-text">${escapeHtml(displayText)}</p>`;
+      }
+      if (parsed.summary) {
+        html += `<div class="summary-box">${escapeHtml(parsed.summary)}</div>`;
+      }
+      if (parsed.strengths && parsed.strengths.length) {
+        html += `<div class="improvements-block"><div class="improvements-label" style="color:var(--teal);">Strengths</div>`;
+        parsed.strengths.forEach(s => { html += `<div class="improvements-item">✓ ${escapeHtml(s)}</div>`; });
+        html += `</div>`;
+      }
+      if (parsed.improvements && parsed.improvements.length) {
+        html += `<div class="improvements-block"><div class="improvements-label" style="color:var(--gold-dark);">Improvements</div>`;
+        parsed.improvements.forEach(s => { html += `<div class="improvements-item">→ ${escapeHtml(s)}</div>`; });
+        html += `</div>`;
+      }
+
+      outputArea.innerHTML = html;
+      outputArea.style.display = 'block';
+      copyBtn.style.display    = 'flex';
+      outputFooter.style.display = 'flex';
+
+      const issueCount = (parsed.issues || []).length;
+      updateStats(wordCount, issueCount, parsed.score, parsed.grade_level);
+      renderScoreBadge(parsed.score);
+      renderIssues(parsed.issues || []);
+
+    } catch (err) {
+      clearInterval(msgTimer);
+      showError(err.message || 'Something went wrong. Please try again.');
+    }
+
+    analyzeBtn.disabled = false;
+  });
+</script>
+</body>
+</html>
